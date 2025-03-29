@@ -18,6 +18,7 @@ import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.TestMiniMRClientCluster.MyReducer;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Partitioner;
@@ -52,7 +53,25 @@ public class BigramFrequencyPairs extends Configured implements Tool {
 			
 			/*
 			 * TODO: Your implementation goes here.
+			 * 
 			 */
+			if (words.length > 1){
+				String previous_word = words[0];
+				for (int i = 1; i < words.length; i++) {
+					String w = words[i];
+					// Skip empty words
+					if (w.length() == 0) {
+						continue;
+					}
+					BIGRAM.set(previous_word, w);
+					context.write(BIGRAM, ONE);
+					
+					BIGRAM.set(previous_word, "");
+					context.write(BIGRAM, ONE);
+
+					previous_word = w;
+				}
+			}
 		}
 	}
 
@@ -64,6 +83,7 @@ public class BigramFrequencyPairs extends Configured implements Tool {
 
 		// Reuse objects.
 		private final static FloatWritable VALUE = new FloatWritable();
+		int marginalCount = 1;
 
 		@Override
 		public void reduce(PairOfStrings key, Iterable<IntWritable> values,
@@ -71,9 +91,25 @@ public class BigramFrequencyPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			int sum = 0;
+			for(IntWritable value : values){
+				sum += value.get();
+			}
+
+			if(key.getRightElement().equals("")){
+				marginalCount = sum;
+				VALUE.set(sum);
+				context.write(key, VALUE);
+			}else{
+				VALUE.set((float)sum / marginalCount);
+				context.write(key, VALUE);
+			}
 		}
 	}
 	
+	/*
+	 * Combiner: aggregate bigram counts
+	 */
 	private static class MyCombiner extends
 			Reducer<PairOfStrings, IntWritable, PairOfStrings, IntWritable> {
 		private static final IntWritable SUM = new IntWritable();
@@ -84,6 +120,13 @@ public class BigramFrequencyPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			// The combiner aggregates counts for the same key to reduce shuffle data.
+			int sum = 0;
+			for (IntWritable value : values) {
+				sum += value.get();
+			}
+			SUM.set(sum);
+			context.write(key, SUM);
 		}
 	}
 
