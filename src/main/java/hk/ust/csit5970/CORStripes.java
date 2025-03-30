@@ -43,6 +43,8 @@ public class CORStripes extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			
+			
 		}
 	}
 
@@ -241,6 +243,8 @@ public class CORStripes extends Configured implements Tool {
 		job2.setMapperClass(CORStripesMapper2.class);
 		job2.setCombinerClass(CORStripesCombiner2.class);
 		job2.setReducerClass(CORStripesReducer2.class);
+
+		job2.setPartitionerClass(MyPartitioner.class); // Custom Partitioner
 
 		job2.setOutputKeyClass(PairOfStrings.class);
 		job2.setOutputValueClass(DoubleWritable.class);
