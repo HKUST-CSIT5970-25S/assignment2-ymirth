@@ -58,7 +58,6 @@ public class CORPairs extends Configured implements Tool {
 		
 			while (doc_tokenizer.hasMoreTokens()) { // parse document
 				String word = doc_tokenizer.nextToken();
-				// StringTokenizer line_tokenizer = new StringTokenizer(line);
 				if(word.length() == 0){
 					continue;
 				}
